@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: policy-rag-assistant
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: rag-ingestion-workers
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.enterprise.rag.kafka"
+        spring.json.value.default.type: "com.enterprise.rag.kafka.DocumentUploadedEvent"
+
+rag:
+  kafka:
+    ingest-topic: document.uploaded
+    dlq-topic: document.uploaded.dlq
+    retry-attempts: 2
+    retry-backoff-ms: 2000
+  ollama:
+    base-url: http://localhost:11434
+    chat-model: llama3.2:3b
+    embedding-model: nomic-embed-text
+    temperature: 0.1
+    timeout-seconds: 120
+  pgvector:
+    host: localhost
+    port: 5432
+    database: ragdb
+    user: raguser
+    password: ragpassword
+    table: policy_embeddings
+    dimension: 768
+  retrieval:
+    max-results: 4
+    min-score: 0.55
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
